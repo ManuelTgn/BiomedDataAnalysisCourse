@@ -26,12 +26,17 @@ bla bla
 Run dana --help to see all command line options.
 """
 
-from dana.dana import (
-    print_welcome,
+from dana import (
+    dana,
     __version__
 )
-from dana.dana_argparse import DanaArgumentParser
-from dana.utils import is_csv
+from utils import (
+    check_type,
+    is_csv,
+    DEFAULT_SEPARATOR
+)
+from dana_argparse import DanaArgumentParser
+
 
 from typing import Optional, List
 
@@ -78,11 +83,20 @@ def get_parser() -> DanaArgumentParser:
         metavar="DATASET",
         help="Path to the dataset CSV file."
     )
+    group.add_argument(
+        "-s",
+        "--separator",
+        type=str,
+        nargs="?",
+        const=DEFAULT_SEPARATOR,
+        default=DEFAULT_SEPARATOR,
+        metavar="SEPARATOR",
+        help="Separator character used in the input dataset"
+    )
     return parser
 
 
 def main(commandline_args: Optional[List[str]]=None) -> None:
-    dana_start = time.time()
     parser = get_parser()
     if commandline_args is None:
         commandline_args = sys.argv[1:]  # get input args
@@ -101,13 +115,16 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
     debug = args.debug
     if not args.dataset:
         parser.error("No dataset file given")
-    if not is_csv(args.dataset):
+    check_type(str, args.separator)
+    if not is_csv(args.dataset, args.separator):
         parser.error(f"{args.dataset} does not appear to be a CSV file")
-    dataset = args.dataset
 
-    # start analysis
-    print_welcome(args, debug, verbose)
+    # DANA analysis
+    dana(args, verbose, debug)
+
+
+if __name__ == "__main__":
+    main()
     
-    dana_stop = time.time()
 
 

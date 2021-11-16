@@ -6,7 +6,7 @@ are given, DANA reminds the user to check the help for further
 explanations on the returned errors. 
 """
 
-from dana.dana import __version__
+from dana import __version__
 
 from argparse import (
     ArgumentParser,
@@ -55,13 +55,14 @@ class DanaArgumentParser(ArgumentParser):
             prefix: str = ...
         ) -> None:
             if usage is not SUPPRESS:
-                self._add_item(self._format_usage, usage, actions, groups, "")
+                args = usage, actions, groups, ""
+                self._add_item(self._format_usage, args)
 
     # end of DanaHelpFormatter
 
     def __init__(self, *args: Tuple, **kwargs: Dict) -> None:
         kwargs["formatter_class"] = self.DanaHelpFormatter
-        kwargs["usage"] = kwargs["usage"].replace("{version", __version__)
+        kwargs["usage"] = kwargs["usage"].replace("{version}", __version__)
         super().__init__(*args, **kwargs)
     
     def error(self, errmsg: str) -> None:

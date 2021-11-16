@@ -1,11 +1,46 @@
-from dana.utils import exception_handler
+from utils import (
+    check_type,
+    exception_handler
+)
+from dataset_analyzer import (
+    csv_reader
+)
 
 from argparse import Namespace
+from typing import Type
 
+import time
 import sys
 import os
 
 __version__ = "0.0.1"
+
+
+def dana(
+    commandline_args: Namespace, 
+    verbose: bool = False, 
+    debug: bool = False
+) -> None:
+    check_type(Namespace, commandline_args, debug)
+    try:
+        dataset = commandline_args.dataset
+    except AttributeError as e:
+        errmsg = f"Attempt to access unknown {Namespace.__name__} attribute"
+        exception_handler(e, errmsg, debug)
+    # check parameters consistency
+    check_type(str, dataset, debug)
+    if not os.path.isfile(dataset):
+        errmsg = f"Unable to locate {dataset}"
+        exception_handler(FileNotFoundError, errmsg, debug)
+    # store command line arguments in vars
+    dataset = commandline_args.dataset
+    separator = commandline_args.separator
+    # start analysis
+    dana_start = time.time()
+    print_welcome(commandline_args, debug, verbose)
+    df = csv_reader(dataset, separator, {})
+    dana_stop = time.time()
+    print_close(dana_start, dana_stop, debug)
 
 
 def print_welcome(
@@ -31,5 +66,14 @@ def print_welcome(
     print(analysis_msg)
 
 
-def print_close(start: float, stop: float) -> None:
-    
+def print_close(start: float, stop: float, debug: bool = False) -> None:
+    check_type(float, start, debug)
+    check_type(float, stop, debug)
+    if start < 0 or stop < 0:
+        errmsg = f"Illegal {float.__name__} value"
+        exception_handler(ValueError, errmsg, debug)
+    if stop < start:
+        errmsg = f"Illegal values (stop: {stop} < start: {start})"
+        exception_handler(ValueError, errmsg, debug)
+    closing_msg = "DANA analysis finished. \nElapsed time %.2fs" % (stop - start)
+    print(closing_msg)
