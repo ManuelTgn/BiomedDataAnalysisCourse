@@ -149,8 +149,8 @@ class PatientsIterator():
 def initialize_patient(row: List[T], patid: int) -> Patient:
     patid += PATID_START
     age = row["Age.at.diagnosis"]
-    sex = ["Sex"]
-    status = ["Last.known.patient.status"]
+    sex = row["Sex"]
+    status = row["Last.known.patient.status"]
     patient = Patient(patid, age, sex, status)
     return patient
 
@@ -158,7 +158,7 @@ def build_patients_dict(
     dataset: pd.DataFrame, 
     verbose: bool, 
     debug: bool
-) -> Dict[Patient]:
+) -> Dict[int, Patient]:
     check_type(pd.DataFrame, dataset, debug)
     patslist = dataset.apply(lambda x : initialize_patient(x, x.name), axis=1)
     patsdict = {patient.patid:patient for patient in patslist}

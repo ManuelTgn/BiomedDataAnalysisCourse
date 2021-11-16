@@ -5,9 +5,12 @@ from utils import (
 from dataset_analyzer import (
     csv_reader
 )
+from patient import build_patients_dict
 
 from argparse import Namespace
 from typing import Type
+
+import pandas as pd
 
 import time
 import sys
@@ -33,14 +36,34 @@ def dana(
         errmsg = f"Unable to locate {dataset}"
         exception_handler(FileNotFoundError, errmsg, debug)
     # store command line arguments in vars
+    func = commandline_args.func
     dataset = commandline_args.dataset
     separator = commandline_args.separator
     # start analysis
     dana_start = time.time()
     print_welcome(commandline_args, debug, verbose)
     df = csv_reader(dataset, separator, {})
+    if func == "analyze":
+        pass
+    elif func == "introduce":
+        dana_introduce(df, commandline_args.pid, verbose, debug)
+
     dana_stop = time.time()
     print_close(dana_start, dana_stop, debug)
+
+
+def dana_introduce(dataset: pd.DataFrame, pid: int, verbose: bool, debug: bool) -> None:
+    try:
+        pats_dict = build_patients_dict(dataset, verbose, debug)
+    except ValueError as e:
+        errmsg = "An error occurred while building the patients dictionary"
+        exception_handler(e, errmsg, debug)
+    try:
+        pat = pats_dict[pid]
+    except KeyError as e:
+        errmsg = f"Wrong key value given ({pid})"
+        exception_handler(e, errmsg, debug)
+    print(pats_dict[pid])
 
 
 def print_welcome(

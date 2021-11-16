@@ -75,6 +75,15 @@ def get_parser() -> DanaArgumentParser:
         help="Enable error stack tracing for debugging."
     )
     group.add_argument(
+        "-f",
+        "--func",
+        type=str,
+        nargs="?",
+        default="analyze",
+        metavar="ACTION",
+        help="Available functions (\"analyze\" or \"introduce\")" 
+    )
+    group.add_argument(
         "-d", 
         "--dataset", 
         type=str, 
@@ -92,6 +101,14 @@ def get_parser() -> DanaArgumentParser:
         default=DEFAULT_SEPARATOR,
         metavar="SEPARATOR",
         help="Separator character used in the input dataset"
+    )
+    group.add_argument(
+        "--pid",
+        type=int,
+        nargs="?",
+        default=None,
+        metavar="PID",
+        help="Patient ID. Used with \"introduce\" function."
     )
     return parser
 
@@ -113,6 +130,15 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
         errmsg = f"Expected {bool.__name__}, got {type(args.debug).__name__}"
         parser.error(errmsg)
     debug = args.debug
+    if not args.func:
+        parser.error(
+            "No function selected. Please choose one between \"analyze\" and \"introduce\""
+        )
+    check_type(str, args.func)
+    if args.func != "analyze" and args.func != "introduce":
+        parser.error(
+            "Unknown function selected. Please choose one between \"analyze\" and \"introduce\""
+        )
     if not args.dataset:
         parser.error("No dataset file given")
     check_type(str, args.separator)
