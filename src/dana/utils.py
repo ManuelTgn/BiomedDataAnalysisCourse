@@ -11,7 +11,6 @@ import os
 
 
 DEFAULT_SEPARATOR = ","
-NO_GROUP = "0000_nogroup"
 PATID_START = 1000000
 T = TypeVar("T")  # generic template type
 

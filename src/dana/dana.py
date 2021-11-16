@@ -5,7 +5,10 @@ from utils import (
 from dataset_analyzer import (
     csv_reader
 )
-from patient import build_patients_dict
+from patient import (
+    build_patients_dict,
+    build_patients_ds
+)
 
 from argparse import Namespace
 from typing import Type
@@ -55,15 +58,12 @@ def dana(
 def dana_introduce(dataset: pd.DataFrame, pid: int, verbose: bool, debug: bool) -> None:
     try:
         pats_dict = build_patients_dict(dataset, verbose, debug)
+        pats = build_patients_ds(dataset, verbose, debug)
     except ValueError as e:
         errmsg = "An error occurred while building the patients dictionary"
         exception_handler(e, errmsg, debug)
-    try:
-        pat = pats_dict[pid]
-    except KeyError as e:
-        errmsg = f"Wrong key value given ({pid})"
-        exception_handler(e, errmsg, debug)
     print(pats_dict[pid])
+    print(pats[pid])
 
 
 def print_welcome(

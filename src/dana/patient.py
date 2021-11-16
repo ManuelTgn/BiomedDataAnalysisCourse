@@ -1,7 +1,7 @@
+from numpy import pi
 from utils import(
     exception_handler,
     check_type,
-    NO_GROUP,
     PATID_START,
     T
 )
@@ -25,6 +25,7 @@ class Patient():
         self._age = age
         self._sex = sex
         self._pat_status = pat_status
+
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} object: {os.stat(self).st_size} bytes required>"
@@ -74,67 +75,58 @@ class Patient():
         return self._get_pat_status()
 
 
-class Patients():
-    def __init__(self, pats_list: List[Patient], group_name: str = NO_GROUP) -> None:
-        check_type(list, pats_list)
-        check_type(str, group_name)
-        self._pats_list = pats_list
-        self._group_name = group_name
-        self._size = len(self.pats_list)
-    
-    def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} object: {os.stat(self).st_size} bytes>"
+class Patients(Dict[int, Patient]):
+    _group = "Unknown"  # patients group type 
 
-    
-    def __str__(self) -> str:
-        return f"List of {len(self)} patients (group {self.group_name})"
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} object: {len(self.values())}, {os.stat(self).st_size} bytes>"
 
     
     def __len__(self) -> int:
-        return len(self._pats_list)
+        return len(self.values())
 
     
     def __iter__(self) -> Iterator[Patient]:
         return PatientsIterator(self)
 
     
-    def __getitem__(self, idx: int) -> Patient:
-        assert bool(self.pats_list)
-        try:
-            pat = self.pats_list[idx]
-        except IndexError as e:
-            errmsg = f"Index out of bounds ({idx})"
-            exception_handler(e, errmsg, False)
-        return pat
-
-
-    def _get_pats_list(self) -> List[Patient]:
-        return self._pats_list
-
-    @property
-    def pats_list(self) -> List[Patient]:
-        return self._get_pats_list()
-
-    
-    def _get_group_name(self) -> str:
-        if self._group_name == NO_GROUP:
-            return ""
-        return self._group_name
-
-    @property
-    def group_name(self) -> str:
-        return self._get_group_name()
-
-    
-    def append(self, patient: Patient) -> None:
+    def add(self, pid: int, patient: Patient) -> None:
+        check_type(int, pid)
         check_type(Patient, patient)
-        self._pats_list.append(patient)
+        if pid < PATID_START: 
+            errmsg = f"Forbidden patient ID ({pid})"
+            exception_handler(ValueError, errmsg, False)
+        try:
+            self[pid] = patient
+        except KeyError as e:
+            errmsg = f"Wrong key ({pid})"
+            exception_handler(e, errmsg, False)
+
+    def set_group(self, group: str) -> None:
+        check_type(str, group)
+        self._group = group
+
+    def _get_patients(self) -> List[Patient]:
+        return list(self.values())
+
+    @property
+    def patients(self) -> List[Patient]:
+        return self._get_patients()
+
+    
+    def _get_group(self) -> str:
+        assert self._group
+        return self._group
+
+    @property
+    def group(self) -> str:
+        return self._get_group()
 
 
 class PatientsIterator():
     def __init__(self, patients: Patients) -> None:
         check_type(Patients, patients)
-        self._patients = patients
+        self._patients = list(patients.values())
         self._index = 0
 
     def __next__(self) -> Patient:
@@ -154,6 +146,7 @@ def initialize_patient(row: List[T], patid: int) -> Patient:
     patient = Patient(patid, age, sex, status)
     return patient
 
+
 def build_patients_dict(
     dataset: pd.DataFrame, 
     verbose: bool, 
@@ -163,5 +156,17 @@ def build_patients_dict(
     patslist = dataset.apply(lambda x : initialize_patient(x, x.name), axis=1)
     patsdict = {patient.patid:patient for patient in patslist}
     return patsdict
+
+
+def build_patients_ds(
+    dataset: pd.DataFrame,
+    verbose: bool,
+    debug: bool
+) -> Patients:
+    check_type(pd.DataFrame, dataset, debug)
+    patients = Patients()
+    patslist = dataset.apply(lambda x : initialize_patient(x, x.name), axis=1)
+    for pat in patslist: patients[pat.patid] = pat
+    return patients
 
    
