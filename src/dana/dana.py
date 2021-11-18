@@ -3,7 +3,8 @@ from utils import (
     exception_handler
 )
 from dataset_analyzer import (
-    csv_reader
+    csv_reader, 
+    print_statistics
 )
 from patient import (
     build_patients_dict,
@@ -47,7 +48,7 @@ def dana(
     print_welcome(commandline_args, debug, verbose)
     df = csv_reader(dataset, separator, {})
     if func == "analyze":
-        pass
+        print_statistics(df, debug, verbose)
     elif func == "introduce":
         dana_introduce(df, commandline_args.pid, verbose, debug)
 

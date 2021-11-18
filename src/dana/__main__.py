@@ -145,6 +145,13 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
     if not is_csv(args.dataset, args.separator):
         parser.error(f"{args.dataset} does not appear to be a CSV file")
 
+    # check args consistency with the chosen functionality
+    if args.func == "analyze":
+        if args.pid is not None:
+            parser.error(
+                "Forbidden argument given (\"--pid\") with functionality \"analyze\""
+            )
+
     # DANA analysis
     dana(args, verbose, debug)
 

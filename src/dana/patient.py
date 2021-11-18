@@ -102,9 +102,11 @@ class Patients(Dict[int, Patient]):
             errmsg = f"Wrong key ({pid})"
             exception_handler(e, errmsg, False)
 
+
     def set_group(self, group: str) -> None:
         check_type(str, group)
         self._group = group
+
 
     def _get_patients(self) -> List[Patient]:
         return list(self.values())
