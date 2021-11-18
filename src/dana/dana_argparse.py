@@ -8,13 +8,7 @@ explanations on the returned errors.
 
 from dana import __version__
 
-from argparse import (
-    ArgumentParser,
-    HelpFormatter,
-    Action,
-    _ArgumentGroup,
-    SUPPRESS
-)
+from argparse import ArgumentParser, HelpFormatter, Action, _ArgumentGroup, SUPPRESS
 from typing import Dict, Iterable, Tuple
 from colorama import Fore, init
 
@@ -38,7 +32,7 @@ class DanaArgumentParser(ArgumentParser):
     class DanaHelpFormatter(HelpFormatter):
         """This class extends HelpFormatter from argparse.
         Customize help format for DANA.
-        
+
         ...
 
         Methods
@@ -48,11 +42,11 @@ class DanaArgumentParser(ArgumentParser):
         """
 
         def add_usage(
-            self, 
-            usage: str, 
-            actions: Iterable[Action], 
-            groups: Iterable[_ArgumentGroup], 
-            prefix: str = ...
+            self,
+            usage: str,
+            actions: Iterable[Action],
+            groups: Iterable[_ArgumentGroup],
+            prefix: str = ...,
         ) -> None:
             if usage is not SUPPRESS:
                 args = usage, actions, groups, ""
@@ -64,14 +58,19 @@ class DanaArgumentParser(ArgumentParser):
         kwargs["formatter_class"] = self.DanaHelpFormatter
         kwargs["usage"] = kwargs["usage"].replace("{version}", __version__)
         super().__init__(*args, **kwargs)
-    
+
     def error(self, errmsg: str) -> None:
         assert isinstance(errmsg, str)
-        errormsg = Fore.RED + "\nERROR: " + "{}." + Fore.RESET + "\n\nRun \"dana --help\" to see usage.\n\n"
+        errormsg = (
+            Fore.RED
+            + "\nERROR: "
+            + "{}."
+            + Fore.RESET
+            + '\n\nRun "dana --help" to see usage.\n\n'
+        )
         sys.stderr.write(errormsg.format(errmsg))
         sys.exit(3)
 
     def error_noargs(self) -> None:
         self.print_help()
         sys.exit(2)
-

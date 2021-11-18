@@ -21,29 +21,18 @@ DANA version {version}
 
 Usage:
 
-bla bla
+python3 __main__.py -d DATASET -s CSV_SEPARATOR
 
 Run dana --help to see all command line options.
 """
 
-from dana import (
-    dana,
-    __version__
-)
-from utils import (
-    check_type,
-    is_csv,
-    DEFAULT_SEPARATOR
-)
+from dana import dana, __version__
+from utils import check_type, is_csv, DEFAULT_SEPARATOR
 from dana_argparse import DanaArgumentParser
-
-import random, threading, webbrowser
 
 from typing import Optional, List
 
-import time
 import sys
-import os
 
 
 def get_parser() -> DanaArgumentParser:
@@ -51,29 +40,26 @@ def get_parser() -> DanaArgumentParser:
     # start command line args parsing
     group = parser.add_argument_group("Options")
     group.add_argument(
-        "-h", 
-        "--help", 
-        action="help", 
-        help="Show this message and exit."
+        "-h", "--help", action="help", help="Show this message and exit."
     )
     group.add_argument(
-        "--version", 
-        action="version", 
-        help="Print DANA version and exit.", 
-        version=__version__
+        "--version",
+        action="version",
+        help="Print DANA version and exit.",
+        version=__version__,
     )
     group.add_argument(
         "--verbose",
         default=False,
         action="store_true",
-        help="Print verbose messages during analysis execution."
+        help="Print verbose messages during analysis execution.",
     )
     group.add_argument(
         "--debug",
         default=False,
         action="store_true",
         dest="debug",
-        help="Enable error stack tracing for debugging."
+        help="Enable error stack tracing for debugging.",
     )
     group.add_argument(
         "-f",
@@ -82,16 +68,16 @@ def get_parser() -> DanaArgumentParser:
         nargs="?",
         default="analyze",
         metavar="ACTION",
-        help="Available functions (\"analyze\" or \"introduce\")" 
+        help='Available functions ("analyze" or "introduce")',
     )
     group.add_argument(
-        "-d", 
-        "--dataset", 
-        type=str, 
-        nargs="?", 
-        default="", 
+        "-d",
+        "--dataset",
+        type=str,
+        nargs="?",
+        default="",
         metavar="DATASET",
-        help="Path to the dataset CSV file."
+        help="Path to the dataset CSV file.",
     )
     group.add_argument(
         "-s",
@@ -101,7 +87,7 @@ def get_parser() -> DanaArgumentParser:
         const=DEFAULT_SEPARATOR,
         default=DEFAULT_SEPARATOR,
         metavar="SEPARATOR",
-        help="Separator character used in the input dataset"
+        help="Separator character used in the input dataset",
     )
     group.add_argument(
         "-o",
@@ -110,7 +96,7 @@ def get_parser() -> DanaArgumentParser:
         nargs="?",
         default="./",
         metavar="OUTFILE",
-        help="Path to summary statistics excel file. Used with \"analyze\" function."
+        help='Path to summary statistics excel file. Used with "analyze" function.',
     )
     group.add_argument(
         "--pid",
@@ -118,19 +104,19 @@ def get_parser() -> DanaArgumentParser:
         nargs="?",
         default=None,
         metavar="PID",
-        help="Patient ID. Used with \"introduce\" function."
+        help='Patient ID. Used with "introduce" function.',
     )
     return parser
 
 
-def main(commandline_args: Optional[List[str]]=None) -> None:
+def main(commandline_args: Optional[List[str]] = None) -> None:
     parser = get_parser()
     if commandline_args is None:
         commandline_args = sys.argv[1:]  # get input args
     if not commandline_args:  # no args given
         parser.error_noargs()
     args = parser.parse_args(commandline_args)  # parse arguments
-    
+
     # --- read command line args
     if not isinstance(args.verbose, bool):
         errmsg = f"Expected {bool.__name__}, got {type(args.verbose).__name__}"
@@ -142,12 +128,12 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
     debug = args.debug
     if not args.func:
         parser.error(
-            "No function selected. Please choose one between \"analyze\" and \"introduce\""
+            'No function selected. Please choose one between "analyze" and "introduce"'
         )
     check_type(str, args.func)
     if args.func != "analyze" and args.func != "introduce":
         parser.error(
-            "Unknown function selected. Please choose one between \"analyze\" and \"introduce\""
+            'Unknown function selected. Please choose one between "analyze" and "introduce"'
         )
     if not args.dataset:
         parser.error("No dataset file given")
@@ -159,7 +145,7 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
     if args.func == "analyze":
         if args.pid is not None:
             parser.error(
-                "Forbidden argument given (\"--pid\") with functionality \"analyze\""
+                'Forbidden argument given ("--pid") with functionality "analyze"'
             )
         check_type(str, args.out, debug)
         if not args.out:
@@ -167,15 +153,11 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
     if args.func == "introduce":
         if args.out:
             parser.error(
-                "Forbidden argument given (\"--out\") with functionality \"introduce\""
+                'Forbidden argument given ("--out") with functionality "introduce"'
             )
-
     # DANA analysis
     dana(args, verbose, debug)
 
 
 if __name__ == "__main__":
     main()
-    
-
-

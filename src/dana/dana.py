@@ -1,42 +1,33 @@
+"""Core of DANA.
+This script governs the DANA analysis, calling the required 
+functionalities and analyses.
+"""
 
-from platform import dist
-from utils import (
-    check_type,
-    exception_handler
-)
+
+from scipy.sparse import data
+from utils import check_type, exception_handler
 from dataset_analyzer import (
-    csv_reader, 
+    csv_reader,
     print_statistics,
-    write_summary_statistics_excel, 
-    compute_euclidean_distance
+    write_summary_statistics_excel,
+    compute_euclidean_distance,
 )
-from patient import (
-    build_patients_dict,
-    build_patients_ds
-)
-
-from plot_data import (
-    plot_age_data,
-    plot_recovery_data,
-    plot_clusters
-)
+from patient import build_patients_dict, build_patients_ds
+from plot_data import generate_plots
 
 from argparse import Namespace
-from typing import Type
 
 import pandas as pd
 
 import time
-import sys
 import os
+
 
 __version__ = "0.0.1"
 
 
 def dana(
-    commandline_args: Namespace, 
-    verbose: bool = False, 
-    debug: bool = False
+    commandline_args: Namespace, verbose: bool = False, debug: bool = False
 ) -> None:
     check_type(Namespace, commandline_args, debug)
     try:
@@ -58,17 +49,25 @@ def dana(
     print_welcome(commandline_args, debug, verbose)
     df = csv_reader(dataset, separator, {})
     if func == "analyze":
-        print_statistics(df, debug, verbose)
-        write_summary_statistics_excel(df, commandline_args.out, debug, verbose)
-        plot_age_data(df, commandline_args.out, debug, verbose)
-        plot_recovery_data(df, commandline_args.out, debug, verbose)
-        dist_mat = compute_euclidean_distance(df, debug, verbose)
-        plot_clusters(dist_mat, commandline_args.out, debug, verbose)
+        dana_analyze(dataset, commandline_args.out, debug, verbose)
     elif func == "introduce":
         dana_introduce(df, commandline_args.pid, verbose, debug)
 
     dana_stop = time.time()
     print_close(dana_start, dana_stop, debug)
+
+
+def dana_analyze(
+    dataset: pd.DataFrame, outdir: str, debug: bool, verbose: bool
+) -> None:
+    print_statistics(dataset, debug, verbose)  # print dataset summary statistics
+    write_summary_statistics_excel(
+        dataset, outdir, debug, verbose
+    )  # write excel file with summary statistics
+    dist_mat = compute_euclidean_distance(
+        dataset, debug, verbose
+    )  # compute euclidean distance between patients
+    generate_plots(dataset, dist_mat, outdir, debug, verbose)
 
 
 def dana_introduce(dataset: pd.DataFrame, pid: int, verbose: bool, debug: bool) -> None:
@@ -83,12 +82,12 @@ def dana_introduce(dataset: pd.DataFrame, pid: int, verbose: bool, debug: bool) 
 
 
 def print_welcome(
-    commandline_args: Namespace,
-    debug: bool = False,
-    verbose: bool = False
+    commandline_args: Namespace, debug: bool = False, verbose: bool = False
 ) -> None:
     if not isinstance(commandline_args.dataset, str):
-        errmsg = f"Expected {str.__name__}, got {type(commandline_args.dataset).__name__}"
+        errmsg = (
+            f"Expected {str.__name__}, got {type(commandline_args.dataset).__name__}"
+        )
         exception_handler(TypeError, errmsg, debug)
     print("".join(["*" for _ in range(75)]))
     print(f"\n\tWelcome to DANA v{__version__}\n")

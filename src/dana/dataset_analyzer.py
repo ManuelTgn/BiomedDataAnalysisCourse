@@ -1,15 +1,11 @@
-from platform import dist
-import typing
-from warnings import catch_warnings
-from utils import (
-    exception_handler,
-    check_type
-)
+"""DANA analysis core functions.
+"""
+from utils import exception_handler, check_type
 
-from xlsxwriter.workbook import Workbook
-from xlsxwriter.worksheet import Worksheet
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.preprocessing import OneHotEncoder
+from xlsxwriter.worksheet import Worksheet
+from xlsxwriter.workbook import Workbook
 from typing import Dict, List, Tuple
 from numpy import ndarray
 
@@ -17,15 +13,11 @@ import pandas as pd
 import numpy as np
 
 import string
-import sys
 import os
 
 
 def csv_reader(
-    csv_file: str, 
-    separator: str, 
-    debug: bool,
-    **kwargs: Dict
+    csv_file: str, separator: str, debug: bool, **kwargs: Dict
 ) -> pd.DataFrame:
     check_type(str, csv_file, debug)
     if not os.path.isfile(csv_file):
@@ -41,9 +33,7 @@ def csv_reader(
 
 
 def compute_shape(
-    dataset: pd.DataFrame, 
-    debug: bool = False, 
-    verbose: bool = False
+    dataset: pd.DataFrame, debug: bool = False, verbose: bool = False
 ) -> Tuple[int, int]:
     check_type(pd.DataFrame, dataset, debug)
     assert not dataset.empty
@@ -52,7 +42,9 @@ def compute_shape(
     return nrow, ncol
 
 
-def compute_column_type(dataset: pd.DataFrame, debug: bool, verbose: bool) -> Dict[str, str]:
+def compute_column_type(
+    dataset: pd.DataFrame, debug: bool, verbose: bool
+) -> Dict[str, str]:
     check_type(pd.DataFrame, dataset)
     if dataset.empty:
         errmsg = f"Empty {pd.DataFrame.__name__} object; unable to print statistics"
@@ -60,7 +52,7 @@ def compute_column_type(dataset: pd.DataFrame, debug: bool, verbose: bool) -> Di
     column_types = {}
     # recover numerical columns
     numerical_cols = dataset._get_numeric_data().columns.tolist()
-    for num_col in numerical_cols: 
+    for num_col in numerical_cols:
         column_types[num_col] = "numerical"
     # remaining columns are categorical
     categorical_columns = set(dataset.columns.tolist()) - set(numerical_cols)
@@ -71,9 +63,7 @@ def compute_column_type(dataset: pd.DataFrame, debug: bool, verbose: bool) -> Di
 
 
 def compute_count_stats(
-    dataset: pd.DataFrame,  
-    debug: bool, 
-    verbose: bool
+    dataset: pd.DataFrame, debug: bool, verbose: bool
 ) -> Dict[str, Dict[str, str]]:
     check_type(pd.DataFrame, dataset, debug)
     if dataset.empty:
@@ -90,16 +80,16 @@ def compute_count_stats(
         most_freq_val = indexes[int(np.where(values == values.max())[0])]
         less_freq_val = indexes[int(np.where(values == values.min())[0])]
         columns_stats[col] = {
-            "type":column_types[col], 
-            "index":indexes, 
-            "counts":["%.2f%%" % (val * 100) for val in (values / values.sum())],
-            "values_num":unique_vals_num,
-            "most_freq":most_freq_val,
-            "less_freq":less_freq_val
+            "type": column_types[col],
+            "index": indexes,
+            "counts": ["%.2f%%" % (val * 100) for val in (values / values.sum())],
+            "values_num": unique_vals_num,
+            "most_freq": most_freq_val,
+            "less_freq": less_freq_val,
         }
         assert len(columns_stats[col]["index"]) == len(columns_stats[col]["counts"])
     return columns_stats
-    
+
 
 def print_statistics(dataset: pd.DataFrame, debug: bool, verbose: bool) -> None:
     check_type(pd.DataFrame, dataset, debug)
@@ -119,20 +109,20 @@ def print_statistics(dataset: pd.DataFrame, debug: bool, verbose: bool) -> None:
         )
         indexes = columns_stat[col]["index"]
         values = columns_stat[col]["counts"]
-        for i,idx in enumerate(indexes):
+        for i, idx in enumerate(indexes):
             print(f"\t\t- {idx}: {values[i]}")
 
 
 def format_excel_column(
     df: pd.DataFrame,
     workbook: Workbook,
-    worksheet: Worksheet, 
+    worksheet: Worksheet,
     columns: List[str],
     colors: Dict[str, str],
     col_type: str,
     excel_headers: Dict[int, str],
     debug: bool = False,
-    verbose: bool = False 
+    verbose: bool = False,
 ) -> None:
     check_type(pd.DataFrame, df, debug)
     if df.empty:
@@ -150,19 +140,16 @@ def format_excel_column(
         errmsg = f"Unrecognized column type to color ({col_type})"
         exception_handler(e, errmsg, debug)
     for col in columns:
-        frmt = workbook.add_format({"bg_color":color})
+        frmt = workbook.add_format({"bg_color": color})
         excel_header = str(excel_headers[df.columns.get_loc(col)])
         worksheet.conditional_format(
             excel_header + "2:" + excel_header + str(df.shape[0] + 1),
-            {"type":"no_blanks", "format":frmt}
+            {"type": "no_blanks", "format": frmt},
         )
 
 
 def write_summary_statistics_excel(
-    dataset: pd.DataFrame, 
-    outdir: str, 
-    debug: bool = False,
-    verbose: bool = False
+    dataset: pd.DataFrame, outdir: str, debug: bool = False, verbose: bool = False
 ) -> None:
     check_type(pd.DataFrame, dataset, debug)
     if dataset.empty:
@@ -173,10 +160,10 @@ def write_summary_statistics_excel(
     df = {}
     for col in columns_stats.keys():
         df[col] = {
-            "var_type":columns_stats[col]["type"],
-            "values_number":columns_stats[col]["values_num"],
-            "most_frequent_value":columns_stats[col]["most_freq"],
-            "less_frequent_value":columns_stats[col]["less_freq"] 
+            "var_type": columns_stats[col]["type"],
+            "values_number": columns_stats[col]["values_num"],
+            "most_frequent_value": columns_stats[col]["most_freq"],
+            "less_frequent_value": columns_stats[col]["less_freq"],
         }
     df = pd.DataFrame(df)
     # write excel report
@@ -193,37 +180,35 @@ def write_summary_statistics_excel(
     df_t = df.T
     cat_cols = df_t[df_t.var_type == "categorical"].index.tolist()
     num_cols = df_t[df_t.var_type == "numerical"].index.tolist()
-    colors = {"categorical":"#68AB25", "numerical":"#9F25AB"}  # columns' colors
+    colors = {"categorical": "#68AB25", "numerical": "#9F25AB"}  # columns' colors
     # format categorical columns
     format_excel_column(
-        df, 
-        workbook, 
-        worksheet, 
-        cat_cols, 
-        colors, 
-        "categorical", 
-        excel_header_dict, 
-        debug, 
-        verbose
+        df,
+        workbook,
+        worksheet,
+        cat_cols,
+        colors,
+        "categorical",
+        excel_header_dict,
+        debug,
+        verbose,
     )
     # format numerical columns
     format_excel_column(
-        df, 
-        workbook, 
-        worksheet, 
-        num_cols, 
-        colors, 
-        "numerical", 
-        excel_header_dict, 
-        debug, 
+        df,
+        workbook,
+        worksheet,
+        num_cols,
+        colors,
+        "numerical",
+        excel_header_dict,
+        debug,
     )
     writer.save()
 
 
 def compute_euclidean_distance(
-    dataset: pd.DataFrame, 
-    debug: bool, 
-    verbose: bool
+    dataset: pd.DataFrame, debug: bool, verbose: bool
 ) -> ndarray:
     check_type(pd.DataFrame, dataset, debug)
     if dataset.empty:
@@ -234,5 +219,3 @@ def compute_euclidean_distance(
     ohc_data = enc.transform(dataset).toarray()
     dist_mat = euclidean_distances(ohc_data)
     return dist_mat
-    
-
