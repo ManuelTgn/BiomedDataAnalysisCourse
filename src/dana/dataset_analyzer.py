@@ -1,3 +1,5 @@
+from platform import dist
+import typing
 from warnings import catch_warnings
 from utils import (
     exception_handler,
@@ -6,7 +8,10 @@ from utils import (
 
 from xlsxwriter.workbook import Workbook
 from xlsxwriter.worksheet import Worksheet
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics.pairwise import euclidean_distances
 from typing import Dict, List, Tuple
+from numpy import ndarray
 
 import pandas as pd
 import numpy as np
@@ -213,4 +218,21 @@ def write_summary_statistics_excel(
         debug, 
     )
     writer.save()
+
+
+def compute_euclidean_distance(
+    dataset: pd.DataFrame, 
+    debug: bool, 
+    verbose: bool
+) -> ndarray:
+    check_type(pd.DataFrame, dataset, debug)
+    if dataset.empty:
+        errmsg = f"Empty {pd.DataFrame.__name__} object; unable to write statistics"
+        exception_handler(ValueError, errmsg, debug)
+    enc = OneHotEncoder(handle_unknown="ignore")
+    enc.fit(dataset)
+    ohc_data = enc.transform(dataset).toarray()
+    dist_mat = euclidean_distances(ohc_data)
+    return dist_mat
+    
 

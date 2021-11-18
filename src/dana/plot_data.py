@@ -1,8 +1,14 @@
+import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
 import os
+
+from utils import check_type
+
+import scipy.spatial as sp 
+import scipy.cluster.hierarchy as hc
 
 
 def plot_age_data(
@@ -139,7 +145,22 @@ def plot_recovery_data(
     plt.savefig(outfile, format="png")
 
 
-    
+def plot_clusters(
+    dist_mat: np.ndarray, 
+    outdir: str,
+    debug: bool, 
+    verbose: bool
+) -> None:
+    check_type(np.ndarray, dist_mat)
+    check_type(str, outdir)
+    outfile = os.path.join(outdir, "distance_matrix.png")
+    linkage = hc.linkage(sp.distance.squareform(dist_mat), method="average")
+    fig = plt.figure(figsize=(15,15))
+    sns.clustermap(dist_mat, row_linkage=linkage, col_linkage=linkage)
+    plt.savefig(outfile, format="png")
+
+
+
 
 
     

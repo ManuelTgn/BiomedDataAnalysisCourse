@@ -1,4 +1,5 @@
 
+from platform import dist
 from utils import (
     check_type,
     exception_handler
@@ -6,7 +7,8 @@ from utils import (
 from dataset_analyzer import (
     csv_reader, 
     print_statistics,
-    write_summary_statistics_excel
+    write_summary_statistics_excel, 
+    compute_euclidean_distance
 )
 from patient import (
     build_patients_dict,
@@ -15,7 +17,8 @@ from patient import (
 
 from plot_data import (
     plot_age_data,
-    plot_recovery_data
+    plot_recovery_data,
+    plot_clusters
 )
 
 from argparse import Namespace
@@ -59,6 +62,8 @@ def dana(
         write_summary_statistics_excel(df, commandline_args.out, debug, verbose)
         plot_age_data(df, commandline_args.out, debug, verbose)
         plot_recovery_data(df, commandline_args.out, debug, verbose)
+        dist_mat = compute_euclidean_distance(df, debug, verbose)
+        plot_clusters(dist_mat, commandline_args.out, debug, verbose)
     elif func == "introduce":
         dana_introduce(df, commandline_args.pid, verbose, debug)
 
