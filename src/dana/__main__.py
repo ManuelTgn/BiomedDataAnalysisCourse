@@ -37,6 +37,7 @@ from utils import (
 )
 from dana_argparse import DanaArgumentParser
 
+import random, threading, webbrowser
 
 from typing import Optional, List
 
@@ -107,7 +108,7 @@ def get_parser() -> DanaArgumentParser:
         "--out",
         type=str,
         nargs="?",
-        default="",
+        default="./",
         metavar="OUTFILE",
         help="Path to summary statistics excel file. Used with \"analyze\" function."
     )

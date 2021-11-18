@@ -155,7 +155,7 @@ def format_excel_column(
 
 def write_summary_statistics_excel(
     dataset: pd.DataFrame, 
-    outfile: str, 
+    outdir: str, 
     debug: bool = False,
     verbose: bool = False
 ) -> None:
@@ -163,7 +163,7 @@ def write_summary_statistics_excel(
     if dataset.empty:
         errmsg = f"Empty {pd.DataFrame.__name__} object; unable to write statistics"
         exception_handler(ValueError, errmsg, debug)
-    check_type(str, outfile, debug)
+    check_type(str, outdir, debug)
     columns_stats = compute_count_stats(dataset, debug, verbose)
     df = {}
     for col in columns_stats.keys():
@@ -175,6 +175,7 @@ def write_summary_statistics_excel(
         }
     df = pd.DataFrame(df)
     # write excel report
+    outfile = os.path.join(outdir, "summary.xlsx")
     writer = pd.ExcelWriter(outfile, engine="xlsxwriter")
     df.to_excel(writer, sheet_name="Sheet1")
     workbook = writer.book

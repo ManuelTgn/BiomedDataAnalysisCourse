@@ -1,3 +1,4 @@
+
 from utils import (
     check_type,
     exception_handler
@@ -10,6 +11,11 @@ from dataset_analyzer import (
 from patient import (
     build_patients_dict,
     build_patients_ds
+)
+
+from plot_data import (
+    plot_age_data,
+    plot_recovery_data
 )
 
 from argparse import Namespace
@@ -51,6 +57,8 @@ def dana(
     if func == "analyze":
         print_statistics(df, debug, verbose)
         write_summary_statistics_excel(df, commandline_args.out, debug, verbose)
+        plot_age_data(df, commandline_args.out, debug, verbose)
+        plot_recovery_data(df, commandline_args.out, debug, verbose)
     elif func == "introduce":
         dana_introduce(df, commandline_args.pid, verbose, debug)
 
