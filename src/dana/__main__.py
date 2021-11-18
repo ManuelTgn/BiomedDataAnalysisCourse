@@ -103,6 +103,15 @@ def get_parser() -> DanaArgumentParser:
         help="Separator character used in the input dataset"
     )
     group.add_argument(
+        "-o",
+        "--out",
+        type=str,
+        nargs="?",
+        default="",
+        metavar="OUTFILE",
+        help="Path to summary statistics excel file. Used with \"analyze\" function."
+    )
+    group.add_argument(
         "--pid",
         type=int,
         nargs="?",
@@ -150,6 +159,14 @@ def main(commandline_args: Optional[List[str]]=None) -> None:
         if args.pid is not None:
             parser.error(
                 "Forbidden argument given (\"--pid\") with functionality \"analyze\""
+            )
+        check_type(str, args.out, debug)
+        if not args.out:
+            parser.error("Missing output summary statistics file")
+    if args.func == "introduce":
+        if args.out:
+            parser.error(
+                "Forbidden argument given (\"--out\") with functionality \"introduce\""
             )
 
     # DANA analysis

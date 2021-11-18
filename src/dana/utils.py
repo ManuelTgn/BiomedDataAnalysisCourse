@@ -28,6 +28,7 @@ def exception_handler(
     if debug:
         raise exception_type(f"\n\n{errmsg}")
     sys.stderr.write(Fore.RED + f"\n\nERROR: {errmsg}\n" + Fore.RESET)
+    sys.exit(1)
 
 
 def check_type(

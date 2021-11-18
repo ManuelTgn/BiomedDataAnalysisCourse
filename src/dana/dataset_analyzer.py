@@ -1,13 +1,17 @@
+from warnings import catch_warnings
 from utils import (
     exception_handler,
     check_type
 )
 
+from xlsxwriter.workbook import Workbook
+from xlsxwriter.worksheet import Worksheet
 from typing import Dict, List, Tuple
 
 import pandas as pd
 import numpy as np
 
+import string
 import sys
 import os
 
@@ -65,7 +69,7 @@ def compute_count_stats(
     dataset: pd.DataFrame,  
     debug: bool, 
     verbose: bool
-) -> None:
+) -> Dict[str, Dict[str, str]]:
     check_type(pd.DataFrame, dataset, debug)
     if dataset.empty:
         errmsg = f"Empty {pd.DataFrame.__name__} object; unable to print statistics"
@@ -75,18 +79,24 @@ def compute_count_stats(
     columns_stats = {}  # dictionary with columns statistics
     for col in cols:
         counts = dataset[col].value_counts().to_dict()
-        indexes = counts.keys()
+        indexes = list(counts.keys())
         values = np.array(list(counts.values()))
+        unique_vals_num = len(indexes)
+        most_freq_val = indexes[int(np.where(values == values.max())[0])]
+        less_freq_val = indexes[int(np.where(values == values.min())[0])]
         columns_stats[col] = {
             "type":column_types[col], 
             "index":indexes, 
-            "counts":["%.2f%%" % (val * 100) for val in (values / values.sum())]
+            "counts":["%.2f%%" % (val * 100) for val in (values / values.sum())],
+            "values_num":unique_vals_num,
+            "most_freq":most_freq_val,
+            "less_freq":less_freq_val
         }
         assert len(columns_stats[col]["index"]) == len(columns_stats[col]["counts"])
     return columns_stats
     
 
-def print_statistics(dataset: pd.DataFrame, debug: bool, verbose: bool)-> None:
+def print_statistics(dataset: pd.DataFrame, debug: bool, verbose: bool) -> None:
     check_type(pd.DataFrame, dataset, debug)
     if dataset.empty:
         errmsg = f"Empty {pd.DataFrame.__name__} object; unable to print statistics"
@@ -98,12 +108,108 @@ def print_statistics(dataset: pd.DataFrame, debug: bool, verbose: bool)-> None:
         print(
             str(
                 f"{col}:\n"
-                f"\t-Variable type: {columns_stat[col]['type']}\n"
-                "\t-Values:"
+                f"\t- Variable type: {columns_stat[col]['type']}\n"
+                "\t- Values:"
             )
         )
         indexes = columns_stat[col]["index"]
         values = columns_stat[col]["counts"]
         for i,idx in enumerate(indexes):
-            print(f"\t\t-{idx}: {values[i]}")
+            print(f"\t\t- {idx}: {values[i]}")
+
+
+def format_excel_column(
+    df: pd.DataFrame,
+    workbook: Workbook,
+    worksheet: Worksheet, 
+    columns: List[str],
+    colors: Dict[str, str],
+    col_type: str,
+    excel_headers: Dict[int, str],
+    debug: bool = False,
+    verbose: bool = False 
+) -> None:
+    check_type(pd.DataFrame, df, debug)
+    if df.empty:
+        errmsg = f"Empty {pd.DataFrame.__name__} object; unable to write statistics"
+        exception_handler(ValueError, errmsg, debug)
+    check_type(Workbook, workbook, debug)
+    check_type(Worksheet, worksheet, debug)
+    check_type(list, columns, debug)
+    check_type(dict, colors, debug)
+    check_type(str, col_type, debug)
+    check_type(dict, excel_headers, debug)
+    try:
+        color = colors[col_type]
+    except IndexError as e:
+        errmsg = f"Unrecognized column type to color ({col_type})"
+        exception_handler(e, errmsg, debug)
+    for col in columns:
+        frmt = workbook.add_format({"bg_color":color})
+        excel_header = str(excel_headers[df.columns.get_loc(col)])
+        worksheet.conditional_format(
+            excel_header + "2:" + excel_header + str(df.shape[0] + 1),
+            {"type":"no_blanks", "format":frmt}
+        )
+
+
+def write_summary_statistics_excel(
+    dataset: pd.DataFrame, 
+    outfile: str, 
+    debug: bool = False,
+    verbose: bool = False
+) -> None:
+    check_type(pd.DataFrame, dataset, debug)
+    if dataset.empty:
+        errmsg = f"Empty {pd.DataFrame.__name__} object; unable to write statistics"
+        exception_handler(ValueError, errmsg, debug)
+    check_type(str, outfile, debug)
+    columns_stats = compute_count_stats(dataset, debug, verbose)
+    df = {}
+    for col in columns_stats.keys():
+        df[col] = {
+            "var_type":columns_stats[col]["type"],
+            "values_number":columns_stats[col]["values_num"],
+            "most_frequent_value":columns_stats[col]["most_freq"],
+            "less_frequent_value":columns_stats[col]["less_freq"] 
+        }
+    df = pd.DataFrame(df)
+    # write excel report
+    writer = pd.ExcelWriter(outfile, engine="xlsxwriter")
+    df.to_excel(writer, sheet_name="Sheet1")
+    workbook = writer.book
+    worksheet = writer.sheets["Sheet1"]
+    # color columns according to variable type
+    excel_header_dict = dict(
+        zip(range(25), list(string.ascii_uppercase)[1:])
+    )  # skip column 'A' (index col)
+    # recover numerical and categorical columns
+    df_t = df.T
+    cat_cols = df_t[df_t.var_type == "categorical"].index.tolist()
+    num_cols = df_t[df_t.var_type == "numerical"].index.tolist()
+    colors = {"categorical":"#68AB25", "numerical":"#9F25AB"}  # columns' colors
+    # format categorical columns
+    format_excel_column(
+        df, 
+        workbook, 
+        worksheet, 
+        cat_cols, 
+        colors, 
+        "categorical", 
+        excel_header_dict, 
+        debug, 
+        verbose
+    )
+    # format numerical columns
+    format_excel_column(
+        df, 
+        workbook, 
+        worksheet, 
+        num_cols, 
+        colors, 
+        "numerical", 
+        excel_header_dict, 
+        debug, 
+    )
+    writer.save()
 
