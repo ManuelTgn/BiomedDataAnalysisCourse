@@ -214,6 +214,9 @@ def compute_euclidean_distance(
     if dataset.empty:
         errmsg = f"Empty {pd.DataFrame.__name__} object; unable to write statistics"
         exception_handler(ValueError, errmsg, debug)
+    # handle na values presence in the dataset
+    if any(dataset.isnull().any().tolist()):
+        dataset = dataset.dropna()  # remove rows with na values
     enc = OneHotEncoder(handle_unknown="ignore")
     enc.fit(dataset)
     ohc_data = enc.transform(dataset).toarray()
